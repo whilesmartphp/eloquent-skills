@@ -1,0 +1,11 @@
+vendor/
+**/.DS_Store
+.idea/
+.phpunit.result.cache
+.phpunit.cache
+workbench/storage
+storage/
+.vscode
+composer.lock
+.composer-local.json
+package.mk
