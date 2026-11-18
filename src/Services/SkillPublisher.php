@@ -32,20 +32,20 @@ class SkillPublisher
             $locked = SkillsConfig::query('skill')->whereKey($skill->getKey())->lockForUpdate()->first();
 
             if (! $locked instanceof Skill) {
-                throw SkillVersionUnavailable::for($skill->public_id);
+                throw SkillVersionUnavailable::for($skill->uuid);
             }
 
             if ($locked->draft_revision !== $expectedRevision) {
                 throw new StaleDraftRevision($expectedRevision, $locked->draft_revision);
             }
 
-            $publicId = (string) Str::uuid();
+            $uuid = (string) Str::uuid();
             $number = $locked->latest_version_number + 1;
             $files = $locked->draft_files;
             $provenance = array_merge($locked->draft_provenance ?? [], [
                 'catalogue' => [
-                    'skill' => $locked->public_id,
-                    'version' => $publicId,
+                    'skill' => $locked->uuid,
+                    'version' => $uuid,
                     'number' => $number,
                     'draft_revision' => $locked->draft_revision,
                 ],
@@ -61,7 +61,7 @@ class SkillPublisher
             $versionClass = SkillsConfig::model('version');
             $version = new $versionClass;
             $version->forceFill([
-                'public_id' => $publicId,
+                'uuid' => $uuid,
                 'skill_id' => $locked->getKey(),
                 'name' => $locked->name,
                 'number' => $number,
@@ -93,7 +93,7 @@ class SkillPublisher
         $skill = $version->skill()->withTrashed()->first();
 
         if (! $skill instanceof Skill) {
-            throw SkillVersionUnavailable::for($version->public_id);
+            throw SkillVersionUnavailable::for($version->uuid);
         }
 
         $this->ensureSkillAccess($skill, $actor, SkillAuthorizer::REVOKE);

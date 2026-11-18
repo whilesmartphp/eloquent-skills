@@ -110,7 +110,7 @@ class SkillImporter
 
         $provenance = [
             'import' => [
-                'id' => $import->public_id,
+                'id' => $import->uuid,
                 'source' => $import->source,
                 'reference' => $import->reference,
             ],
@@ -133,7 +133,7 @@ class SkillImporter
 
         return [
             'name' => $name,
-            'skill' => $skill->public_id,
+            'skill' => $skill->uuid,
             'action' => $existing === null ? 'created' : 'updated',
             'draft_revision' => $skill->draft_revision,
             'problems' => $this->portable->problems($this->portable->forFolder($files, $name)),

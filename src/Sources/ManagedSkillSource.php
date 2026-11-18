@@ -11,7 +11,7 @@ use Whilesmart\Skills\Services\SkillVersionResolver;
 final class ManagedSkillSource implements SkillSource
 {
     /**
-     * @param  list<int|string>  $versionIds  Version public ids, or internal version keys as integers.
+     * @param  list<int|string>  $versionIds  Version UUIDs, or internal version keys as integers.
      */
     public function __construct(
         private readonly string $ownerType,

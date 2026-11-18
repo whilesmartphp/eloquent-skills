@@ -60,7 +60,7 @@ class SkillImportController extends Controller
 
     public function show(Request $request, string $import): JsonResponse
     {
-        $model = Str::isUuid($import) ? SkillsConfig::query('import')->where('public_id', $import)->first() : null;
+        $model = Str::isUuid($import) ? SkillsConfig::query('import')->where('uuid', $import)->first() : null;
 
         if (! $model instanceof SkillImport) {
             throw new NotFoundHttpException;

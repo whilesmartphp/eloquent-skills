@@ -69,15 +69,15 @@ class SkillAuthorizationTest extends TestCase
         $this->grant($intruder, $elsewhere);
 
         $version = $this->publishedVersion($owner, $workspace);
-        $skillId = $version->skill->public_id;
+        $skillId = $version->skill->uuid;
 
         $this->actingAs($intruder)->getJson("/api/skills/{$skillId}")->assertForbidden();
         $this->actingAs($intruder)->getJson("/api/skills/{$skillId}/validation")->assertForbidden();
         $this->actingAs($intruder)->getJson("/api/skills/{$skillId}/versions")->assertForbidden();
-        $this->actingAs($intruder)->getJson("/api/skills/{$skillId}/versions/{$version->public_id}")->assertForbidden();
+        $this->actingAs($intruder)->getJson("/api/skills/{$skillId}/versions/{$version->uuid}")->assertForbidden();
         $this->actingAs($intruder)->patchJson("/api/skills/{$skillId}", ['draft_revision' => 1, 'metadata' => ['x' => 1]])->assertForbidden();
         $this->actingAs($intruder)->postJson("/api/skills/{$skillId}/publish", ['draft_revision' => 1])->assertForbidden();
-        $this->actingAs($intruder)->postJson("/api/skills/{$skillId}/versions/{$version->public_id}/revoke")->assertForbidden();
+        $this->actingAs($intruder)->postJson("/api/skills/{$skillId}/versions/{$version->uuid}/revoke")->assertForbidden();
         $this->actingAs($intruder)->deleteJson("/api/skills/{$skillId}")->assertForbidden();
 
         $this->createSkillVia($intruder, $workspace, 'data-modelling')->assertForbidden();

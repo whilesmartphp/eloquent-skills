@@ -21,6 +21,20 @@ use Whilesmart\Skills\Sources\ManagedSkillSource;
 class SkillVersionTest extends TestCase
 {
     #[Test]
+    public function revoked_versions_cannot_be_read_or_converted(): void
+    {
+        $user = $this->user();
+        $workspace = $this->workspace();
+        $this->grant($user, $workspace);
+        $version = $this->publishedVersion($user, $workspace);
+        $url = "/api/skills/{$version->skill->uuid}/versions/{$version->uuid}";
+        $this->actingAs($user)->postJson($url.'/revoke')->assertOk();
+        $this->getJson($url)->assertNotFound();
+        $this->expectException(SkillVersionUnavailable::class);
+        $version->toPortableSkill();
+    }
+
+    #[Test]
     public function publishing_creates_an_immutable_validated_version(): void
     {
         $user = $this->user();
@@ -35,7 +49,7 @@ class SkillVersionTest extends TestCase
         $this->assertStringContainsString('# Page layout', $version->body);
         $this->assertSame($this->fixture('page-layout'), $version->files);
         $this->assertTrue($version->isAvailable());
-        $this->assertSame($version->skill->public_id, $version->provenance['catalogue']['skill']);
+        $this->assertSame($version->skill->uuid, $version->provenance['catalogue']['skill']);
 
         $portable = $version->toPortableSkill();
         $this->assertSame('page-layout', $portable->name());
@@ -94,7 +108,7 @@ class SkillVersionTest extends TestCase
         $version = $this->publishedVersion($user, $workspace);
         $skill = $version->skill;
 
-        $this->actingAs($user)->patchJson("/api/skills/{$skill->public_id}", [
+        $this->actingAs($user)->patchJson("/api/skills/{$skill->uuid}", [
             'draft_revision' => 1,
             'files' => $this->payloadFiles($this->fixture('data-modelling')),
         ])->assertUnprocessable();
@@ -107,9 +121,9 @@ class SkillVersionTest extends TestCase
         $workspace = $this->workspace();
         $this->grant($user, $workspace);
         $version = $this->publishedVersion($user, $workspace);
-        $skillId = $version->skill->public_id;
+        $skillId = $version->skill->uuid;
 
-        $this->actingAs($user)->postJson("/api/skills/{$skillId}/versions/{$version->public_id}/revoke", ['reason' => 'Superseded'])
+        $this->actingAs($user)->postJson("/api/skills/{$skillId}/versions/{$version->uuid}/revoke", ['reason' => 'Superseded'])
             ->assertOk()
             ->assertJsonPath('data.available', false)
             ->assertJsonPath('data.availability.status', 'revoked')
@@ -119,7 +133,7 @@ class SkillVersionTest extends TestCase
         $this->assertSame($version->content_hash, $version->fresh()->content_hash);
 
         $this->expectException(SkillVersionUnavailable::class);
-        app(SkillVersionResolver::class)->resolve($version->public_id, $workspace->getMorphClass(), $workspace->getKey(), 'default', $user);
+        app(SkillVersionResolver::class)->resolve($version->uuid, $workspace->getMorphClass(), $workspace->getKey(), 'default', $user);
     }
 
     #[Test]
@@ -134,32 +148,32 @@ class SkillVersionTest extends TestCase
         $resolver = app(SkillVersionResolver::class);
         $type = $workspace->getMorphClass();
 
-        $this->assertTrue($resolver->resolve($version->public_id, $type, $workspace->getKey(), 'default', $user)->is($version));
-        $this->assertTrue($resolver->resolve($version->public_id, $type, (string) $workspace->getKey(), 'default', $user)->is($version));
+        $this->assertTrue($resolver->resolve($version->uuid, $type, $workspace->getKey(), 'default', $user)->is($version));
+        $this->assertTrue($resolver->resolve($version->uuid, $type, (string) $workspace->getKey(), 'default', $user)->is($version));
 
         foreach ([
-            fn () => $resolver->resolve($version->public_id, $type, $other->getKey(), 'default', $user),
-            fn () => $resolver->resolve($version->public_id, $type, $workspace->getKey(), 'staging', $user),
+            fn () => $resolver->resolve($version->uuid, $type, $other->getKey(), 'default', $user),
+            fn () => $resolver->resolve($version->uuid, $type, $workspace->getKey(), 'staging', $user),
             fn () => $resolver->resolve('not-a-uuid', $type, $workspace->getKey(), 'default', $user),
         ] as $attempt) {
             try {
                 $attempt();
                 $this->fail('An out of scope version resolved.');
-            } catch (SkillVersionUnavailable) {
+            } catch (SkillVersionUnavailable|SkillAccessDenied) {
             }
         }
 
         try {
-            $resolver->resolve($version->public_id, $type, $workspace->getKey(), 'default', $this->user('Stranger'));
+            $resolver->resolve($version->uuid, $type, $workspace->getKey(), 'default', $this->user('Stranger'));
             $this->fail('An unauthorized actor resolved a version.');
         } catch (SkillAccessDenied) {
         }
 
-        $this->actingAs($user)->deleteJson("/api/skills/{$version->skill->public_id}")->assertOk();
+        $this->actingAs($user)->deleteJson("/api/skills/{$version->skill->uuid}")->assertOk();
 
         $this->assertFalse($version->fresh()->isAvailable());
         $this->expectException(SkillVersionUnavailable::class);
-        $resolver->resolve($version->public_id, $type, $workspace->getKey(), 'default', $user);
+        $resolver->resolve($version->uuid, $type, $workspace->getKey(), 'default', $user);
     }
 
     #[Test]
@@ -171,7 +185,7 @@ class SkillVersionTest extends TestCase
         $layout = $this->publishedVersion($user, $workspace);
         $modelling = $this->publishedVersion($user, $workspace, 'data-modelling');
 
-        $pack = (new ManagedSkillSource($workspace->getMorphClass(), $workspace->getKey(), 'default', [$layout->public_id, $modelling->getKey()], $user))->load();
+        $pack = (new ManagedSkillSource($workspace->getMorphClass(), $workspace->getKey(), 'default', [$layout->uuid, $modelling->getKey()], $user))->load();
 
         $this->assertInstanceOf(Pack::class, $pack);
         $this->assertSame(['page-layout', 'data-modelling'], array_column($pack->index(), 'name'));
@@ -180,7 +194,7 @@ class SkillVersionTest extends TestCase
         app(SkillPublisher::class)->revoke($modelling, null, $user);
 
         $this->expectException(SkillVersionUnavailable::class);
-        (new ManagedSkillSource($workspace->getMorphClass(), $workspace->getKey(), 'default', [$layout->public_id, $modelling->public_id], $user))->load();
+        (new ManagedSkillSource($workspace->getMorphClass(), $workspace->getKey(), 'default', [$layout->uuid, $modelling->uuid], $user))->load();
     }
 
     #[Test]
@@ -206,8 +220,8 @@ class SkillVersionTest extends TestCase
         $this->grant($user, $workspace);
 
         $version = $this->publishedVersion($user, $workspace);
-        $this->actingAs($user)->postJson("/api/skills/{$version->skill->public_id}/versions/{$version->public_id}/revoke")->assertOk();
-        $this->actingAs($user)->postJson("/api/skills/{$version->skill->public_id}/versions/{$version->public_id}/revoke")->assertOk();
+        $this->actingAs($user)->postJson("/api/skills/{$version->skill->uuid}/versions/{$version->uuid}/revoke")->assertOk();
+        $this->actingAs($user)->postJson("/api/skills/{$version->skill->uuid}/versions/{$version->uuid}/revoke")->assertOk();
 
         Event::assertDispatchedTimes(SkillCreated::class, 1);
         Event::assertDispatched(SkillVersionPublished::class, fn (SkillVersionPublished $event) => $event->version->is($version) && $event->actor?->is($user));

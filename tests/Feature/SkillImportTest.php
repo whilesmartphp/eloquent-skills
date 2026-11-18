@@ -101,7 +101,7 @@ class SkillImportTest extends TestCase
         $this->assertStringNotContainsString($this->library, json_encode($response->json(), JSON_UNESCAPED_SLASHES));
         $this->assertStringNotContainsString(
             $this->library,
-            json_encode($this->actingAs($user)->getJson("/api/skills/{$skill->public_id}")->json(), JSON_UNESCAPED_SLASHES),
+            json_encode($this->actingAs($user)->getJson("/api/skills/{$skill->uuid}")->json(), JSON_UNESCAPED_SLASHES),
         );
 
         $this->actingAs($user)->getJson('/api/skill-imports')->assertOk()->assertJsonPath('data.meta.total', 1);
@@ -124,7 +124,7 @@ class SkillImportTest extends TestCase
             ->assertJsonPath('errors.import.status', 'failed');
 
         $this->assertSame(1, Skill::query()->count());
-        $this->assertSame(SkillImport::FAILED, SkillImport::query()->where('public_id', $conflict->json('errors.import.id'))->value('status'));
+        $this->assertSame(SkillImport::FAILED, SkillImport::query()->where('uuid', $conflict->json('errors.import.id'))->value('status'));
         $this->assertStringNotContainsString($this->library, json_encode($conflict->json(), JSON_UNESCAPED_SLASHES));
 
         $this->actingAs($user)->postJson('/api/skill-imports', [

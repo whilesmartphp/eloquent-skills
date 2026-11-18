@@ -16,7 +16,7 @@ use Whilesmart\Skills\Support\SkillsConfig;
 
 /**
  * @property int $id
- * @property string $public_id
+ * @property string $uuid
  * @property int $skill_id
  * @property string $name
  * @property int $number
@@ -35,7 +35,7 @@ class SkillVersion extends Model
     public const UPDATED_AT = null;
 
     protected $fillable = [
-        'public_id',
+        'uuid',
         'skill_id',
         'name',
         'number',
@@ -67,13 +67,13 @@ class SkillVersion extends Model
 
     public function getRouteKeyName(): string
     {
-        return 'public_id';
+        return 'uuid';
     }
 
     protected static function booted(): void
     {
         static::creating(function (SkillVersion $version) {
-            $version->public_id ??= (string) Str::uuid();
+            $version->uuid ??= (string) Str::uuid();
         });
 
         static::updating(function () {
@@ -121,10 +121,14 @@ class SkillVersion extends Model
 
     public function toPortableSkill(): PortableSkill
     {
+        if (! $this->isAvailable()) {
+            throw SkillVersionUnavailable::for($this->uuid);
+        }
+
         $portable = app(PortableSkills::class)->forFolder($this->files, $this->name, $this->provenance ?? []);
 
         if (config('skills.verify_content_hash', true) && ! hash_equals($this->content_hash, $portable->contentHash())) {
-            throw SkillVersionUnavailable::tampered($this->public_id);
+            throw SkillVersionUnavailable::tampered($this->uuid);
         }
 
         return $portable;

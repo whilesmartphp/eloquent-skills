@@ -184,7 +184,7 @@ class SkillDraftApiTest extends TestCase
 
         $this->actingAs($user)->deleteJson("/api/skills/{$id}")->assertOk();
         $this->actingAs($user)->getJson("/api/skills/{$id}")->assertNotFound();
-        $this->assertSoftDeleted('skills', ['public_id' => $id]);
+        $this->assertSoftDeleted('skills', ['uuid' => $id]);
 
         $this->createSkillVia($user, $workspace)->assertCreated();
     }
@@ -205,13 +205,16 @@ class SkillDraftApiTest extends TestCase
 
         $this->actingAs($user)->getJson('/api/skills')
             ->assertOk()
-            ->assertJsonPath('data.meta.total', 2);
+            ->assertJsonPath('data.meta.total', 1);
 
+        $this->actingAs($user)->getJson('/api/skills?scope_key=staging')->assertJsonPath('data.meta.total', 0);
+        config(['skills.default_scope_key' => 'staging']);
         $this->actingAs($user)->getJson('/api/skills?scope_key=staging')
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1)
             ->assertJsonPath('data.data.0.name', 'data-modelling');
 
+        config(['skills.default_scope_key' => 'default']);
         $this->actingAs($user)->getJson('/api/skills?q=layout')
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1);

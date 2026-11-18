@@ -82,9 +82,9 @@ trait HandlesSkillRequests
         }
     }
 
-    protected function findSkill(string $publicId): Skill
+    protected function findSkill(string $uuid): Skill
     {
-        $skill = Str::isUuid($publicId) ? SkillsConfig::query('skill')->where('public_id', $publicId)->first() : null;
+        $skill = Str::isUuid($uuid) ? SkillsConfig::query('skill')->where('uuid', $uuid)->first() : null;
 
         if (! $skill instanceof Skill) {
             throw new NotFoundHttpException;
@@ -93,10 +93,10 @@ trait HandlesSkillRequests
         return $skill;
     }
 
-    protected function findVersion(Skill $skill, string $publicId): SkillVersion
+    protected function findVersion(Skill $skill, string $uuid): SkillVersion
     {
-        $version = Str::isUuid($publicId)
-            ? SkillsConfig::query('version')->where('skill_id', $skill->getKey())->where('public_id', $publicId)->with(['skill', 'availability'])->first()
+        $version = Str::isUuid($uuid)
+            ? SkillsConfig::query('version')->where('skill_id', $skill->getKey())->where('uuid', $uuid)->with(['skill', 'availability'])->first()
             : null;
 
         if (! $version instanceof SkillVersion) {

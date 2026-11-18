@@ -13,7 +13,7 @@ The package is unreleased. Install the implementation branch from GitHub:
 ```sh
 composer config repositories.skillpack vcs https://github.com/whilesmartphp/skillpack
 composer config repositories.eloquent-skills vcs https://github.com/whilesmartphp/eloquent-skills
-composer require whilesmart/skillpack:dev-feat/initial-package whilesmart/eloquent-skills:dev-feat/initial-package
+composer require whilesmart/skillpack:dev-dev whilesmart/eloquent-skills:dev-feat/initial-package
 php artisan vendor:publish --tag=skills-config
 php artisan migrate
 ```
@@ -127,7 +127,7 @@ $pack = (new ManagedSkillSource($ownerType, $ownerId, $scopeKey, [$publicId, ...
 $pack->tools(); // list_skills, read_skill, read_reference
 ```
 
-`ManagedSkillSource` takes version public ids, or internal keys as integers, and fails when any of them
+`ManagedSkillSource` takes version UUIDs, or internal keys as integers, and fails when any of them
 is unavailable or outside the owner and scope.
 
 ## Binding skills to models
@@ -144,7 +144,7 @@ $workspace->assignSkillVersion($version, $actor); // SkillBinding pinned to that
 $workspace->skills();                             // managed skills, pivot skill_version_id
 $workspace->skillBindings();
 $workspace->detachSkill($skill, $actor);
-$workspace->pinnedSkillVersionIds();              // [skill public id => version public id]
+$workspace->pinnedSkillVersionIds();              // [skill UUID => version UUID]
 ```
 
 A model binds skills of the owner and scope it reports. By default a model with `owner_type` and
@@ -239,3 +239,5 @@ composer pint:test
 MIT
 
 Route groups (`skills`, `versions`, `imports`, `sources`) can be disabled through `route_groups`. Use `disabled_routes` to remove individual actions by their route names, such as `imports.index` or `publish`.
+
+The default owner-access bridge allows only the configured `default_scope_key`. Hosts supporting several scopes must supply a scope-aware authorizer that checks both individual operations and listing queries.

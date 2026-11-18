@@ -35,7 +35,7 @@ class HasSkillsTest extends TestCase
         $this->assertTrue($binding->isAvailable());
         $this->assertSame(['page-layout'], $workspace->skills()->pluck('name')->all());
         $this->assertSame((int) $version->getKey(), (int) $workspace->skills()->first()->pivot->skill_version_id);
-        $this->assertSame([$version->skill->public_id => $version->public_id], $workspace->pinnedSkillVersionIds());
+        $this->assertSame([$version->skill->uuid => $version->uuid], $workspace->pinnedSkillVersionIds());
     }
 
     #[Test]
@@ -45,9 +45,9 @@ class HasSkillsTest extends TestCase
         $workspace = $this->workspace();
         $this->grant($user, $workspace);
         $first = $this->publishedVersion($user, $workspace);
-        $skillId = $first->skill->public_id;
+        $skillId = $first->skill->uuid;
         $second = $this->actingAs($user)->postJson("/api/skills/{$skillId}/publish", ['draft_revision' => 1])->assertCreated()->json('data.id');
-        $second = SkillVersion::query()->where('public_id', $second)->firstOrFail();
+        $second = SkillVersion::query()->where('uuid', $second)->firstOrFail();
 
         $workspace->assignSkillVersion($first, $user);
         $workspace->assignSkillVersion($second, $user);
@@ -89,6 +89,7 @@ class HasSkillsTest extends TestCase
             'name' => 'Planner',
         ]);
 
+        config(['skills.default_scope_key' => 'staging']);
         $binding = $profile->assignSkillVersion($staging, $user);
         $this->assertSame($profile->getMorphClass(), $binding->skillable_type);
         $this->assertSame(['data-modelling'], $profile->skills()->pluck('name')->all());
@@ -121,7 +122,7 @@ class HasSkillsTest extends TestCase
         } catch (SkillVersionUnavailable) {
         }
 
-        $this->actingAs($user)->deleteJson("/api/skills/{$modelling->skill->public_id}")->assertOk();
+        $this->actingAs($user)->deleteJson("/api/skills/{$modelling->skill->uuid}")->assertOk();
 
         $this->expectException(SkillVersionUnavailable::class);
         $workspace->assignSkillVersion($modelling, $user);

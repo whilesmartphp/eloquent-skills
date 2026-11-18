@@ -15,6 +15,10 @@ class OwnerAccessSkillAuthorizer implements SkillAuthorizer
 
     public function authorize(?Authenticatable $actor, string $ability, string $ownerType, int|string $ownerId, string $scopeKey): bool
     {
+        if ($scopeKey !== (string) config('skills.default_scope_key', 'default')) {
+            return false;
+        }
+
         $owners = $this->owners();
 
         return $owners !== null && $owners->authorize($actor, $ownerType, $ownerId) === true;
@@ -30,7 +34,8 @@ class OwnerAccessSkillAuthorizer implements SkillAuthorizer
 
         $table = $query->getModel()->getTable();
 
-        return $owners->scope($query, $actor, $table.'.owner_type', $table.'.owner_id');
+        return $owners->scope($query, $actor, $table.'.owner_type', $table.'.owner_id')
+            ->where($table.'.scope_key', (string) config('skills.default_scope_key', 'default'));
     }
 
     protected function owners(): ?OwnerAuthorizer

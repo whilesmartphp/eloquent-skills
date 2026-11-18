@@ -15,7 +15,7 @@ use Whilesmart\Skills\Support\SkillsConfig;
 
 /**
  * @property int $id
- * @property string $public_id
+ * @property string $uuid
  * @property string $owner_type
  * @property string $owner_id
  * @property string $scope_key
@@ -70,13 +70,13 @@ class Skill extends Model
 
     public function getRouteKeyName(): string
     {
-        return 'public_id';
+        return 'uuid';
     }
 
     protected static function booted(): void
     {
         static::creating(function (Skill $skill) {
-            $skill->public_id ??= (string) Str::uuid();
+            $skill->uuid ??= (string) Str::uuid();
             $skill->scope_key = SkillsConfig::scopeKey($skill->scope_key);
             $skill->active_name ??= $skill->name;
         });

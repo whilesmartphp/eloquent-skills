@@ -37,7 +37,7 @@ class SkillBindings
                 ->first();
 
             if (! $current instanceof SkillVersion || ! $current->skill instanceof Skill) {
-                throw SkillVersionUnavailable::for((string) $version->public_id);
+                throw SkillVersionUnavailable::for((string) $version->uuid);
             }
 
             $skill = $current->skill;

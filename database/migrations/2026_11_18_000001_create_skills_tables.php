@@ -17,7 +17,7 @@ return new class extends Migration
 
         Schema::create($skills, function (Blueprint $table) {
             $table->id();
-            $table->uuid('public_id')->unique();
+            $table->uuid('uuid')->unique();
             $table->string('owner_type');
             $table->string('owner_id', 64);
             $table->string('scope_key', 64)->default('default');
@@ -38,7 +38,7 @@ return new class extends Migration
 
         Schema::create($versions, function (Blueprint $table) use ($skills) {
             $table->id();
-            $table->uuid('public_id')->unique();
+            $table->uuid('uuid')->unique();
             $table->foreignId('skill_id')->constrained($skills)->restrictOnDelete();
             $table->string('name', 64);
             $table->unsignedInteger('number');
@@ -69,7 +69,7 @@ return new class extends Migration
 
         Schema::create($imports, function (Blueprint $table) {
             $table->id();
-            $table->uuid('public_id')->unique();
+            $table->uuid('uuid')->unique();
             $table->string('owner_type');
             $table->string('owner_id', 64);
             $table->string('scope_key', 64)->default('default');

@@ -1,5 +1,5 @@
 ## [1.0.0] - 2026-11-18
-- Owner and scope isolated skill catalogue with integer or UUID owners and public UUID identifiers
+- Owner and scope isolated skill catalogue with integer or UUID owners and UUID identifiers
 - Raw-file drafts over HTTP (JSON with base64 for binary files, or multipart uploads) with bounded paths, file counts and sizes
 - Revision-checked draft edits and publication, with stale revisions rejected
 - Immutable published versions validated through the portable skillpack core, with content hashes verified on use

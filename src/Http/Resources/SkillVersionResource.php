@@ -28,8 +28,8 @@ class SkillVersionResource extends JsonResource
         $skill = $this->skill;
 
         $data = [
-            'id' => $this->public_id,
-            'skill_id' => $skill?->public_id,
+            'id' => $this->uuid,
+            'skill_id' => $skill?->uuid,
             'name' => $this->name,
             'number' => $this->number,
             'content_hash' => $this->content_hash,

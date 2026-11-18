@@ -109,28 +109,40 @@ abstract class TestCase extends BaseTestCase
 
     protected function createSkillVia(Authenticatable $actor, Model $owner, string $fixture = 'page-layout', ?string $scope = null): TestResponse
     {
-        return $this->actingAs($actor)->postJson('/api/skills', array_filter([
-            'owner_type' => $owner->getMorphClass(),
-            'owner_id' => $owner->getKey(),
-            'scope_key' => $scope,
-            'files' => $this->payloadFiles($this->fixture($fixture)),
-        ], fn ($value) => $value !== null));
+        $previousScope = config('skills.default_scope_key');
+        config(['skills.default_scope_key' => $scope ?? $previousScope]);
+        try {
+            return $this->actingAs($actor)->postJson('/api/skills', array_filter([
+                'owner_type' => $owner->getMorphClass(),
+                'owner_id' => $owner->getKey(),
+                'scope_key' => $scope,
+                'files' => $this->payloadFiles($this->fixture($fixture)),
+            ], fn ($value) => $value !== null));
+        } finally {
+            config(['skills.default_scope_key' => $previousScope]);
+        }
     }
 
     protected function publishedVersion(Authenticatable $actor, Model $owner, string $fixture = 'page-layout', ?string $scope = null): SkillVersion
     {
-        $created = $this->createSkillVia($actor, $owner, $fixture, $scope)->assertCreated();
-        $skillId = $created->json('data.id');
+        $previousScope = config('skills.default_scope_key');
+        config(['skills.default_scope_key' => $scope ?? $previousScope]);
+        try {
+            $created = $this->createSkillVia($actor, $owner, $fixture, $scope)->assertCreated();
+            $skillId = $created->json('data.id');
 
-        $published = $this->actingAs($actor)
-            ->postJson("/api/skills/{$skillId}/publish", ['draft_revision' => $created->json('data.draft_revision')])
-            ->assertCreated();
+            $published = $this->actingAs($actor)
+                ->postJson("/api/skills/{$skillId}/publish", ['draft_revision' => $created->json('data.draft_revision')])
+                ->assertCreated();
 
-        return SkillVersion::query()->where('public_id', $published->json('data.id'))->firstOrFail();
+            return SkillVersion::query()->where('uuid', $published->json('data.id'))->firstOrFail();
+        } finally {
+            config(['skills.default_scope_key' => $previousScope]);
+        }
     }
 
-    protected function skill(string $publicId): Skill
+    protected function skill(string $uuid): Skill
     {
-        return Skill::withTrashed()->where('public_id', $publicId)->firstOrFail();
+        return Skill::withTrashed()->where('uuid', $uuid)->firstOrFail();
     }
 }

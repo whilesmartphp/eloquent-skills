@@ -24,7 +24,7 @@ class SkillResource extends JsonResource
     public function toArray(Request $request): array
     {
         $data = [
-            'id' => $this->public_id,
+            'id' => $this->uuid,
             'owner_type' => $this->owner_type,
             'owner_id' => $this->owner_id,
             'scope_key' => $this->scope_key,

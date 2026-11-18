@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Whilesmart\Skills\Contracts\SkillAuthorizer;
+use Whilesmart\Skills\Exceptions\SkillVersionUnavailable;
 use Whilesmart\Skills\Http\Controllers\Concerns\HandlesSkillRequests;
 use Whilesmart\Skills\Services\SkillPublisher;
 use Whilesmart\Skills\Support\SkillsConfig;
@@ -38,7 +39,12 @@ class SkillVersionController extends Controller
         $model = $this->findSkill($skill);
         $this->authorizeSkill($model, $request->user(), SkillAuthorizer::VIEW);
 
-        return $this->respond($this->resource('version', $this->findVersion($model, $version), true));
+        $found = $this->findVersion($model, $version);
+        if (! $found->isAvailable()) {
+            throw SkillVersionUnavailable::for($found->uuid);
+        }
+
+        return $this->respond($this->resource('version', $found, true));
     }
 
     public function revoke(Request $request, string $skill, string $version): JsonResponse

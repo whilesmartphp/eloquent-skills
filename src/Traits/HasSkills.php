@@ -74,7 +74,7 @@ trait HasSkills
             ->with(['skill', 'version'])
             ->get()
             ->filter(fn (SkillBinding $binding) => $binding->skill !== null && $binding->version !== null)
-            ->mapWithKeys(fn (SkillBinding $binding) => [$binding->skill->public_id => $binding->version->public_id])
+            ->mapWithKeys(fn (SkillBinding $binding) => [$binding->skill->uuid => $binding->version->uuid])
             ->all();
     }
 }
