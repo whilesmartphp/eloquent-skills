@@ -1,0 +1,56 @@
+{
+    "name": "whilesmart/eloquent-skills",
+    "description": "Owner-scoped Agent Skills catalogue for Laravel: raw-file drafts, revision-checked edits, immutable published versions, revocable availability, pinned bindings and controlled imports.",
+    "type": "library",
+    "version": "1.0.0",
+    "license": "MIT",
+    "keywords": ["laravel", "eloquent", "agent-skills", "skills", "catalogue"],
+    "authors": [
+        { "name": "Whilesmart Team" }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/whilesmartphp/skillpack"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0|^12.0",
+        "whilesmart/eloquent-owner-access": "^1.0",
+        "whilesmart/skillpack": "^1.0 || dev-feat/initial-package"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "laravel/pint": "^1.22"
+    },
+    "config": {
+        "platform": {
+            "php": "8.2"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Whilesmart\\Skills\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Whilesmart\\Skills\\SkillsServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/testbench package:test",
+        "pint": ["./vendor/bin/pint"],
+        "pint:test": ["./vendor/bin/pint --test"]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
